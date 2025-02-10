@@ -39,24 +39,24 @@ def run_script():
                 elif int(change) < 0:
                     arrow_emoji = "↙️ تزحلط الارنب 🐰"
                 else:
-                    arrow_emoji = "⏹️"
+                    arrow_emoji = ""
 
                 # تحديد العلم
                 if currency['name'] == "SAR":
                     flag = "🇸🇦"
                 elif currency['name'] == "EUR":
                     flag = "🇪🇺"
-                elif currency['name'] == "EUR":
+                elif currency['name'] == "TRY":
                     flag = "🇹🇷"
                 else:
                     flag = "🇺🇸"
 
                 # تكوين الرسالة
                 message = f"""
-{flag} **{currency_name}**  
-🔹 **سعر المبيع:** {bid_price} ل.س  
-🔹 **سعر الشراء:** {ask_price} ل.س  
-🔹 **التغيير:** {change}  
+{flag} {currency_name}  
+🔹 سعر المبيع : {bid_price} ل.س  
+🔹 سعر الشراء :  {ask_price} ل.س  
+🔹 التغيير : {change}  
 {arrow_emoji}
                 """
                 messages.append(message)
