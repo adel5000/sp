@@ -57,8 +57,13 @@ if data:
         if message_text != last_price:
             # إرسال الرسالة إلى Telegram
             telegram_url = f"https://api.telegram.org/bot{telegram_token}/sendMessage?chat_id={chat_id}&text={requests.utils.quote(message_text)}"
-            requests.get(telegram_url)
-
+            try:
+                response = requests.get(telegram_url)
+                response.raise_for_status()  # سيتسبب في رفع استثناء إذا كانت الاستجابة غير 200
+                print("Message sent successfully!")
+            except requests.exceptions.RequestException as e:
+                print(f"Error sending message: {e}")
+            
             # تحديث آخر سعر مخزن
             with open(last_price_file, 'w') as file:
                 file.write(message_text)
