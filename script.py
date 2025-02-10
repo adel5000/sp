@@ -90,13 +90,7 @@ def run_script():
                     print(f"Error sending message: {e}")
             else:
                 # إذا كانت الأسعار نفسها
-                telegram_url = f"https://api.telegram.org/bot{telegram_token}/sendMessage?chat_id={chat_id}&text={requests.utils.quote('أسعار العملات لم تتغير.')}"
-                try:
-                    response = requests.get(telegram_url)
-                    response.raise_for_status()  # سيتسبب في رفع استثناء إذا كانت الاستجابة غير 200
-                    print("No change in prices. Message sent.")
-                except requests.exceptions.RequestException as e:
-                    print(f"Error sending message: {e}")
+                
 
     return "Code Executed!"
 
