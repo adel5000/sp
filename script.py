@@ -34,9 +34,9 @@ def run_script():
 
                 # تحديد رمز السهم بناءً على التغيير
                 if int(change) > 0:
-                    arrow_emoji = "↗️"
+                    arrow_emoji = "↗️ قفز الارنب 🐇"
                 elif int(change) < 0:
-                    arrow_emoji = "↙️"
+                    arrow_emoji = "↙️ تزحلط الارنب 🐰"
                 else:
                     arrow_emoji = "⏹️"
 
