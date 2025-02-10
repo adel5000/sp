@@ -29,7 +29,8 @@ def run_script():
         for currency in data:
             if currency['name'] in currencies_to_track:
                 currency_name = currency['ar_name']
-                ask_price = currency['bid']
+                ask_price = currency['ask']
+                bid_price = currency['bid']
                 change = currency['change']
 
                 # تحديد رمز السهم بناءً على التغيير
@@ -49,7 +50,7 @@ def run_script():
                     flag = "🇺🇸"
 
                 # تكوين الرسالة
-                message = f"{flag} {currency_name}: {ask_price} ل.س\nالتغيير: {change} {arrow_emoji}"
+                message = f"-------------------\n{flag} {currency_name}\nسعر المبيع : {bid_price} ل.س\nسعر الشراء : {bid_price}\n:التغيير {change}:  {arrow_emoji}\n-------------------"
                 messages.append(message)
 
                 # تخزين السعر في القاموس
