@@ -1,6 +1,5 @@
 import requests
 import json
-import logging
 
 # إعدادات API و Telegram
 api_url = "https://sp-today.com/app_api/cur_damascus.json"
@@ -11,18 +10,15 @@ last_price_file = 'last_price.txt'
 # قائمة العملات التي تريد تتبعها
 currencies_to_track = ["USD", "EUR", "SAR"]
 
-# إعدادات تسجيل السجلات
-logging.basicConfig(filename='log.txt', level=logging.INFO, format='%(asctime)s - %(message)s')
-
 # جلب البيانات من API
 try:
     response = requests.get(api_url)
     response.raise_for_status()  # سيتسبب في رفع استثناء إذا كانت الاستجابة غير 200
     data = response.json()
 
-    logging.info("API request successful.")
+    print("API request successful.")
 except requests.exceptions.RequestException as e:
-    logging.error(f"Error fetching API data: {e}")
+    print(f"Error fetching API data: {e}")
     data = None
 
 messages = []
@@ -71,17 +67,17 @@ if data:
             try:
                 telegram_response = requests.get(telegram_url)
                 telegram_response.raise_for_status()  # سيتسبب في رفع استثناء إذا كانت الاستجابة غير 200
-                logging.info("Message sent successfully to Telegram.")
+                print("Message sent successfully to Telegram.")
             except requests.exceptions.RequestException as e:
-                logging.error(f"Error sending message to Telegram: {e}")
+                print(f"Error sending message to Telegram: {e}")
             
             # تحديث آخر سعر تم تخزينه
             with open(last_price_file, 'w') as file:
                 file.write(message_text)
-                logging.info("Last price updated.")
+                print("Last price updated.")
         else:
-            logging.info("No price change. Message not sent.")
+            print("No price change. Message not sent.")
     else:
-        logging.info("No relevant currency data found.")
+        print("No relevant currency data found.")
 else:
-    logging.error("No data fetched from the API.")
+    print("No data fetched from the API.")
