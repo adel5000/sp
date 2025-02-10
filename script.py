@@ -59,6 +59,7 @@ if data:
             telegram_url = f"https://api.telegram.org/bot{telegram_token}/sendMessage?chat_id={chat_id}&text={requests.utils.quote(message_text)}"
             try:
                 response = requests.get(telegram_url)
+                print("Response from Telegram:", response.text)  # طباعة الاستجابة
                 response.raise_for_status()  # سيتسبب في رفع استثناء إذا كانت الاستجابة غير 200
                 print("Message sent successfully!")
             except requests.exceptions.RequestException as e:
