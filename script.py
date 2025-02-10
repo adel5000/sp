@@ -1,5 +1,6 @@
 import requests
 import json
+import logging
 
 # إعدادات API و Telegram
 api_url = "https://sp-today.com/app_api/cur_damascus.json"
@@ -10,9 +11,19 @@ last_price_file = 'last_price.txt'
 # قائمة العملات التي تريد تتبعها
 currencies_to_track = ["USD", "EUR", "SAR"]
 
+# إعدادات تسجيل السجلات
+logging.basicConfig(filename='log.txt', level=logging.INFO, format='%(asctime)s - %(message)s')
+
 # جلب البيانات من API
-response = requests.get(api_url)
-data = response.json()
+try:
+    response = requests.get(api_url)
+    response.raise_for_status()  # سيتسبب في رفع استثناء إذا كانت الاستجابة غير 200
+    data = response.json()
+
+    logging.info("API request successful.")
+except requests.exceptions.RequestException as e:
+    logging.error(f"Error fetching API data: {e}")
+    data = None
 
 messages = []
 
@@ -58,16 +69,19 @@ if data:
             # إرسال الرسالة إلى Telegram
             telegram_url = f"https://api.telegram.org/bot{telegram_token}/sendMessage?chat_id={chat_id}&text={requests.utils.quote(message_text)}"
             try:
-                response = requests.get(telegram_url)
-                # طباعة الاستجابة إلى ملف
-                with open('output.txt', 'a') as log_file:
-                    log_file.write(f"Response from Telegram: {response.text}\n")
-                response.raise_for_status()  # سيتسبب في رفع استثناء إذا كانت الاستجابة غير 200
-                print("Message sent successfully!")
+                telegram_response = requests.get(telegram_url)
+                telegram_response.raise_for_status()  # سيتسبب في رفع استثناء إذا كانت الاستجابة غير 200
+                logging.info("Message sent successfully to Telegram.")
             except requests.exceptions.RequestException as e:
-                with open('output.txt', 'a') as log_file:
-                    log_file.write(f"Error sending message: {e}\n")
+                logging.error(f"Error sending message to Telegram: {e}")
             
-            # تحديث آخر سعر مخزن
+            # تحديث آخر سعر تم تخزينه
             with open(last_price_file, 'w') as file:
                 file.write(message_text)
+                logging.info("Last price updated.")
+        else:
+            logging.info("No price change. Message not sent.")
+    else:
+        logging.info("No relevant currency data found.")
+else:
+    logging.error("No data fetched from the API.")
