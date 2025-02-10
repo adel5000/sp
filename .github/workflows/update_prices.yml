@@ -1,7 +1,9 @@
 name: Update Currency Prices
 
 on:
-  workflow_dispatch:  # يعني أنه يمكن تشغيله يدويًا
+  schedule:
+    - cron: "*/1 * * * *"  # تشغيل الكود كل دقيقة
+  workflow_dispatch:
     inputs:
       token:
         description: 'Telegram Bot Token'
@@ -35,7 +37,7 @@ jobs:
           CHAT_ID: ${{ inputs.chat_id }}
 
       - name: Upload log as artifact
-        uses: actions/upload-artifact@v4  # استخدم الإصدار v4 هنا
+        uses: actions/upload-artifact@v4
         with:
           name: script-log
           path: ./script.log
