@@ -3,8 +3,8 @@ import json
 
 # إعدادات API و Telegram
 api_url = "https://sp-today.com/app_api/cur_damascus.json"
-telegram_token = "YOUR_TELEGRAM_BOT_TOKEN"
-chat_id = "YOUR_CHAT_ID"
+telegram_token = "7924669675:AAGLWCdlVRnsRg6yF01-u7PFxwTgJ4ZvBtc"
+chat_id = "-1002474033832"
 last_price_file = 'last_price.txt'
 
 # قائمة العملات التي تريد تتبعها
