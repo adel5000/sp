@@ -40,7 +40,6 @@ def run_script():
                     arrow_emoji = "تزحلط الارنب 🐰↙️"
                 else:
                     arrow_emoji = ""
-
                 # تحديد العلم
                 if currency['name'] == "SAR":
                     flag = "🇸🇦"
