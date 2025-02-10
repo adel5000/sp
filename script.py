@@ -50,7 +50,7 @@ def run_script():
                     flag = "🇺🇸"
 
                 # تكوين الرسالة
-                message = f"-------------------\n{flag} {currency_name}\nسعر المبيع : {bid_price} ل.س\nسعر الشراء : {bid_price}\n:التغيير {change}:  {arrow_emoji}\n-------------------"
+                message = f"\n\n{flag} {currency_name}\nسعر المبيع : {bid_price} ل.س\nسعر الشراء : {ask_price} ل.س\n:التغيير {change}  {arrow_emoji}\n"
                 messages.append(message)
 
                 # تخزين السعر في القاموس
