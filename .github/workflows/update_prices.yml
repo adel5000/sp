@@ -35,7 +35,7 @@ jobs:
           CHAT_ID: ${{ inputs.chat_id }}
 
       - name: Upload log as artifact
-        uses: actions/upload-artifact@v3  # تم تحديث الأداة للإصدار v3
+        uses: actions/upload-artifact@v4  # استخدم الإصدار v4 هنا
         with:
           name: script-log
           path: ./script.log
