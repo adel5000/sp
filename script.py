@@ -26,9 +26,9 @@ if data:
 
             # تحديد رمز السهم بناءً على التغيير
             if change > 0:
-                arrow_emoji = "↗️ \n🐇   قفز الارنب"
+                arrow_emoji = "↗️"
             elif change < 0:
-                arrow_emoji = "↙️ \n🐇   تزحلط الارنب"
+                arrow_emoji = "↙️"
             else:
                 arrow_emoji = "⏹️"
             
@@ -41,10 +41,11 @@ if data:
                 flag = "🇺🇸"
 
             # تكوين الرسالة
-            messages.append(f"\n{flag}{currency_name}: {ask_price} ل.س\nالتغيير: {change} {arrow_emoji}")
+            message = f"{flag} {currency_name}: {ask_price} ل.س\nالتغيير: {change} {arrow_emoji}"
+            messages.append(message)
 
     if messages:
-        message_text = "\n🔹 تحديث أسعار الصرف :\n" + "\n\n".join(messages)
+        message_text = "\n🔹 تحديث أسعار الصرف :\n" + "\n".join(messages[:3])  # إرسال فقط 3 رسائل أولية لتقليل الحجم
 
         # فحص آخر رسالة تم إرسالها لمنع التكرار
         try:
