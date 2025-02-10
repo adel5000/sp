@@ -36,9 +36,9 @@ if data:
             arrow = currency['arrow']
 
             # تحديد رمز السهم بناءً على التغيير
-            if change > 0:
+            if int(change) > 0:
                 arrow_emoji = "↗️"
-            elif change < 0:
+            elif int(change) < 0:
                 arrow_emoji = "↙️"
             else:
                 arrow_emoji = "⏹️"
