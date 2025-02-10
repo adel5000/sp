@@ -2,42 +2,24 @@ name: Update Currency Prices
 
 on:
   schedule:
-    - cron: "*/1 * * * *"  # تشغيل الكود كل دقيقة
-  workflow_dispatch:
-    inputs:
-      token:
-        description: 'Telegram Bot Token'
-        required: true
-      chat_id:
-        description: 'Telegram Chat ID'
-        required: true
+    - cron: '*/1 * * * *'  # يعمل كل دقيقة
 
 jobs:
   run_script:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
 
       - name: Set up Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v2
         with:
-          python-version: 3.x
+          python-version: '3.x'
 
-      - name: Install required libraries
+      - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
           pip install requests
 
-      - name: Run Python script
-        run: python script.py
-        env:
-          TELEGRAM_TOKEN: ${{ inputs.token }}
-          CHAT_ID: ${{ inputs.chat_id }}
-
-      - name: Upload log as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: script-log
-          path: ./script.log
+      - name: Run the script
+        run: |
+          python script.py
