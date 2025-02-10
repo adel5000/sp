@@ -69,7 +69,7 @@ def run_script():
                 current_prices[currency['name']] = ask_price
 
         if messages:
-            message_text = "\n🔹 تحديث أسعار الصرف :\n" + "\n".join(messages[:])
+            message_text = "\n🔹 تحديث أسعار الصرف :\n" + "\n\n".join(messages[:])
 
             # قراءة آخر الأسعار من الملف
             try:
