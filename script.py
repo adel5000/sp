@@ -59,11 +59,14 @@ if data:
             telegram_url = f"https://api.telegram.org/bot{telegram_token}/sendMessage?chat_id={chat_id}&text={requests.utils.quote(message_text)}"
             try:
                 response = requests.get(telegram_url)
-                print("Response from Telegram:", response.text)  # طباعة الاستجابة
+                # طباعة الاستجابة إلى ملف
+                with open('output.txt', 'a') as log_file:
+                    log_file.write(f"Response from Telegram: {response.text}\n")
                 response.raise_for_status()  # سيتسبب في رفع استثناء إذا كانت الاستجابة غير 200
                 print("Message sent successfully!")
             except requests.exceptions.RequestException as e:
-                print(f"Error sending message: {e}")
+                with open('output.txt', 'a') as log_file:
+                    log_file.write(f"Error sending message: {e}\n")
             
             # تحديث آخر سعر مخزن
             with open(last_price_file, 'w') as file:
