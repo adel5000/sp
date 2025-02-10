@@ -11,15 +11,8 @@ last_price_file = 'last_price.txt'
 currencies_to_track = ["USD", "EUR", "SAR"]
 
 # جلب البيانات من API
-try:
-    response = requests.get(api_url)
-    response.raise_for_status()  # سيتسبب في رفع استثناء إذا كانت الاستجابة غير 200
-    data = response.json()
-
-    print("API request successful.")
-except requests.exceptions.RequestException as e:
-    print(f"Error fetching API data: {e}")
-    data = None
+response = requests.get(api_url)
+data = response.json()
 
 messages = []
 
@@ -61,20 +54,16 @@ if data:
         except FileNotFoundError:
             last_price = ""
 
+        # إرسال الرسالة فقط إذا كانت الرسالة الجديدة مختلفة عن الرسالة السابقة
         if message_text != last_price:
             # إرسال الرسالة إلى Telegram
             telegram_url = f"https://api.telegram.org/bot{telegram_token}/sendMessage?chat_id={chat_id}&text={requests.utils.quote(message_text)}"
-            try:
-                telegram_response = requests.get(telegram_url)
-                telegram_response.raise_for_status()  # سيتسبب في رفع استثناء إذا كانت الاستجابة غير 200
-                print("Message sent successfully to Telegram.")
-            except requests.exceptions.RequestException as e:
-                print(f"Error sending message to Telegram: {e}")
+            response = requests.get(telegram_url)
             
             # تحديث آخر سعر تم تخزينه
             with open(last_price_file, 'w') as file:
                 file.write(message_text)
-                print("Last price updated.")
+            print("Message sent successfully.")
         else:
             print("No price change. Message not sent.")
     else:
