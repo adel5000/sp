@@ -48,11 +48,11 @@ def run_script():
                     flag = "🇪🇺"
                 elif currency['name'] == "TRY":
                     flag = "🇹🇷"
-elif currency['name'] == "AED":
+                elif currency['name'] == "AED":
                     flag = "🇦🇪"
-elif currency['name'] == "JOD":
+                elif currency['name'] == "JOD":
                     flag = "🇯🇴"
-elif currency['name'] == "EGP":
+                elif currency['name'] == "EGP":
                     flag = "🇪🇬"
                 else:
                     flag = "🇺🇸"
