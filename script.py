@@ -92,10 +92,6 @@ def run_script():
                         json.dump(current_prices, file)
                 except requests.exceptions.RequestException as e:
                     print(f"Error sending message: {e}")
-            else:
-                # إذا كانت الأسعار نفسها
-                
-
     return "Code Executed!"
 
 if __name__ == '__main__':
