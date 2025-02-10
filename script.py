@@ -48,6 +48,12 @@ def run_script():
                     flag = "🇪🇺"
                 elif currency['name'] == "TRY":
                     flag = "🇹🇷"
+elif currency['name'] == "AED":
+                    flag = "🇦🇪"
+elif currency['name'] == "JOD":
+                    flag = "🇯🇴"
+elif currency['name'] == "EGP":
+                    flag = "🇪🇬"
                 else:
                     flag = "🇺🇸"
 
@@ -63,7 +69,7 @@ def run_script():
                 current_prices[currency['name']] = ask_price
 
         if messages:
-            message_text = "\n🔹 تحديث أسعار الصرف :\n" + "\n".join(messages[]) 
+            message_text = "\n🔹 تحديث أسعار الصرف :\n" + "\n".join(messages[:]) 
 
             # قراءة آخر الأسعار من الملف
             try:
