@@ -2,7 +2,7 @@ name: Update Currency Prices
 
 on:
   schedule:
-    - cron: '*/1 * * * *'  # يعمل كل دقيقة
+    - cron: '*/5 * * * *'  # يعمل كل دقيقة
 
 jobs:
   run_script:
