@@ -14,7 +14,7 @@ def run_script():
     last_price_file = 'last_price.json'  # مسار تخزين آخر سعر (تأكد من تعديل المسار)
 
     # قائمة العملات التي تريد تتبعها
-    currencies_to_track = ["USD", "EUR", "SAR"]
+    currencies_to_track = ["USD", "EUR", "SAR" , "TRY"]
 
     # جلب البيانات من API
     response = requests.get(api_url)
@@ -46,18 +46,26 @@ def run_script():
                     flag = "🇸🇦"
                 elif currency['name'] == "EUR":
                     flag = "🇪🇺"
+                elif currency['name'] == "EUR":
+                    flag = "🇹🇷"
                 else:
                     flag = "🇺🇸"
 
                 # تكوين الرسالة
-                message = f"\n\n{flag} {currency_name}\nسعر المبيع : {bid_price} ل.س\nسعر الشراء : {ask_price} ل.س\n:التغيير {change} \n {arrow_emoji}\n"
+                message = f"""
+{flag} **{currency_name}**  
+🔹 **سعر المبيع:** {bid_price} ل.س  
+🔹 **سعر الشراء:** {ask_price} ل.س  
+🔹 **التغيير:** {change}  
+{arrow_emoji}
+                """
                 messages.append(message)
 
                 # تخزين السعر في القاموس
                 current_prices[currency['name']] = ask_price
 
         if messages:
-            message_text = "\n🔹 تحديث أسعار الصرف :\n" + "\n".join(messages[:3])  # إرسال فقط 3 رسائل أولية لتقليل الحجم
+            message_text = "\n🔹 **تحديث أسعار الصرف** :\n" + "\n".join(messages[:3])  # إرسال فقط 3 رسائل أولية لتقليل الحجم
 
             # قراءة آخر الأسعار من الملف
             try:
