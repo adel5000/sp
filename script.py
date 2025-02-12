@@ -33,13 +33,13 @@ def run_script():
                 bid_price = currency['bid']
                 change = currency['change']
 
-                # تحديد رمز السهم بناءً على التغيير
-                if int(change) > 0:
-                    arrow_emoji = "قفز الارنب 🐇↗️"
-                elif int(change) < 0:
-                    arrow_emoji = "تزحلط الارنب 🐰↙️"
-                else:
-                    arrow_emoji = ""
+                # # تحديد رمز السهم بناءً على التغيير
+                # if int(change) > 0:
+                #     arrow_emoji = "قفز الارنب 🐇↗️"
+                # elif int(change) < 0:
+                #     arrow_emoji = "تزحلط الارنب 🐰↙️"
+                # else:
+                #     arrow_emoji = ""
                 # تحديد العلم
                 if currency['name'] == "SAR":
                     flag = "🇸🇦"
@@ -60,15 +60,15 @@ def run_script():
                 message = f"""{flag} {currency_name}  
 🔹 سعر المبيع : {bid_price} ل.س  
 🔹 سعر الشراء :  {ask_price} ل.س  
-🔹 التغيير : {change}  
-{arrow_emoji}"""
+🔹 التغيير : {change}
+"""
                 messages.append(message)
 
                 # تخزين السعر في القاموس
                 current_prices[currency['name']] = ask_price
 
         if messages:
-            message_text = "\n🔹 تحديث أسعار الصرف :\n" + "\n\n".join(messages[:])
+            message_text = "\n🔹 تحديث أسعار الصرف :\n\n" + "\n\n".join(messages[:])
 
             # قراءة آخر الأسعار من الملف
             try:
