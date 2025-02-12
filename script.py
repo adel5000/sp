@@ -14,7 +14,7 @@ def run_script():
     last_price_file = 'last_price.json'  # مسار تخزين آخر سعر (تأكد من تعديل المسار)
 
     # قائمة العملات التي تريد تتبعها
-    currencies_to_track = ["USD", "SAR" , "TRY" , "AED" , "JOD" , "EGP"]
+    currencies_to_track = ["USD", "SAR" , "TRY" , "AED" , "JOD" , "EGP" , "KWD"]
 
     # جلب البيانات من API
     response = requests.get(api_url)
@@ -53,6 +53,8 @@ def run_script():
                     flag = "🇯🇴"
                 elif currency['name'] == "EGP":
                     flag = "🇪🇬"
+                elif currency['name'] == "KWD":
+                    flag = "🇰🇼"
                 else:
                     flag = "🇺🇸"
 
