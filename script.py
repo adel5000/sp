@@ -85,6 +85,10 @@ def run_script():
                     json.dump(current_prices, file)
             except requests.exceptions.RequestException as e:
                 print(f"Error sending message: {e}")
+        else:
+            print("1 : " , last_usd_price)
+            print("2 : " , last_prices.get("USD"))
+            print(message_text)
 
     return "Code Executed!"
 
