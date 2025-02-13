@@ -57,7 +57,8 @@ def run_script():
                         elif int(change) < 0:
                             arrow_emoji = "\n💸 انخفاض في سعر الليرة مقابل الدولار"
                         send = True  # الإرسال سيتم فقط عند تغير سعر الدولار
-
+                print("1 : " , last_usd_price)
+                print("2 : " , last_prices.get("USD"))
                 # تكوين الرسالة لكل العملات
                 message = f"""{flag} {currency_name}  
 🔹 سعر المبيع : {bid_price} ل.س  
@@ -85,10 +86,7 @@ def run_script():
                     json.dump(current_prices, file)
             except requests.exceptions.RequestException as e:
                 print(f"Error sending message: {e}")
-        else:
-            print("1 : " , last_usd_price)
-            print("2 : " , last_prices.get("USD"))
-            print(message_text)
+            
 
     return "Code Executed!"
 
