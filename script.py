@@ -33,7 +33,7 @@ def run_script():
                 bid_price = currency['bid']
                 change = currency['change']
                 arrow_emoji = ""
-                تحديد العلم
+
                 if currency['name'] == "SAR":
                     flag = "🇸🇦"
                 elif currency['name'] == "EUR":
