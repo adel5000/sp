@@ -43,10 +43,10 @@ def run_script():
 
                 # تحديد العلم
                 flags = {
-                    "SAR": "🇸🇦", "EUR": "🇪🇺", "TRY": "🇹🇷",
+                    "USD": "🇺🇸", "SAR": "🇸🇦", "EUR": "🇪🇺", "TRY": "🇹🇷",
                     "AED": "🇦🇪", "JOD": "🇯🇴", "EGP": "🇪🇬", "KWD": "🇰🇼"
                 }
-                flag = flags.get(currency['name'], "🇺🇸")
+                flag = flags.get(currency['name'], "🏳️")
 
                 # مقارنة سعر الدولار الحالي بالسابق قبل التحديث
                 if currency['name'] == "USD":
@@ -58,21 +58,20 @@ def run_script():
                             arrow_emoji = "\n💸 انخفاض في سعر الليرة مقابل الدولار"
                         send = True  # الإرسال سيتم فقط عند تغير سعر الدولار
 
-                # تكوين الرسالة فقط عند تغير سعر الدولار
-                if currency['name'] == "USD" and send:
-                    message = f"""{flag} {currency_name}  
+                # تكوين الرسالة لكل العملات
+                message = f"""{flag} {currency_name}  
 🔹 سعر المبيع : {bid_price} ل.س  
 🔹 سعر الشراء : {ask_price} ل.س  
-🔹 التغيير : {change} {arrow_emoji}
+🔹 التغيير : {change}
 """
-                    messages.append(message)
+                messages.append(message)
 
                 # تحديث القاموس بالأسعار الحالية
                 current_prices[currency['name']] = ask_price
 
-        # إرسال الرسالة فقط عند تغير سعر الدولار
+        # إرسال جميع العملات عند تغير سعر الدولار
         if send and messages:
-            message_text = "\n🔹 تحديث أسعار الصرف :\n\n" + "\n\n".join(messages)
+            message_text = "\n🔹 تحديث أسعار الصرف :\n\n" + "\n\n".join(messages) + arrow_emoji
 
             # إرسال الرسالة إلى Telegram
             telegram_url = f"https://api.telegram.org/bot{telegram_token}/sendMessage?chat_id={chat_id}&text={requests.utils.quote(message_text)}"
