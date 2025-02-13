@@ -57,8 +57,6 @@ def run_script():
                         elif int(change) < 0:
                             arrow_emoji = "\n💸 انخفاض في سعر الليرة مقابل الدولار"
                         send = True  # الإرسال سيتم فقط عند تغير سعر الدولار
-                print("1 : " , last_usd_price)
-                print("2 : " , last_prices.get("USD"))
                 # تكوين الرسالة لكل العملات
                 message = f"""{flag} {currency_name}  
 🔹 سعر المبيع : {bid_price} ل.س  
@@ -71,7 +69,8 @@ def run_script():
                 current_prices[currency['name']] = ask_price
 
         # إرسال جميع العملات عند تغير سعر الدولار
-        if send and messages:
+        #if send and messages:
+        if messages:
             message_text = "\n🔹 تحديث أسعار الصرف :\n\n" + "\n\n".join(messages) + arrow_emoji
 
             # إرسال الرسالة إلى Telegram
