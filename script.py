@@ -61,7 +61,8 @@ def run_script():
                         send = False
 
                 # تكوين الرسالة
-                message = f"""{flag} {currency_name}  
+                message = f"""{flag} {currency_name}
+                {arrow_emoji}
 🔹 سعر المبيع : {bid_price} ل.س  
 🔹 سعر الشراء :  {ask_price} ل.س  
 🔹 التغيير : {change}
