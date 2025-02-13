@@ -32,15 +32,8 @@ def run_script():
                 ask_price = currency['ask']
                 bid_price = currency['bid']
                 change = currency['change']
-
-                # # تحديد رمز السهم بناءً على التغيير
-                # if int(change) > 0:
-                #     arrow_emoji = "قفز الارنب 🐇↗️"
-                # elif int(change) < 0:
-                #     arrow_emoji = "تزحلط الارنب 🐰↙️"
-                # else:
-                #     arrow_emoji = ""
-                # تحديد العلم
+                arrow_emoji = ""
+                تحديد العلم
                 if currency['name'] == "SAR":
                     flag = "🇸🇦"
                 elif currency['name'] == "EUR":
@@ -57,6 +50,15 @@ def run_script():
                     flag = "🇰🇼"
                 else:
                     flag = "🇺🇸"
+                    # تحديد رمز السهم بناءً على التغيير
+                    if int(change) > 0:
+                        arrow_emoji = "تحسن في سعر الليرة مقابل الدولار"
+                        send = True
+                    elif int(change) < 0:
+                        arrow_emoji = "انخفاض في سعر الليرة مقابل الدولار"
+                        send = True
+                    else:
+                        send = False
 
                 # تكوين الرسالة
                 message = f"""{flag} {currency_name}  
@@ -80,7 +82,7 @@ def run_script():
                 last_prices = {}
 
             # مقارنة الأسعار القديمة بالجديدة
-            if current_prices != last_prices:
+            if current_prices != last_prices and send:
                 # إرسال الرسالة إلى Telegram
                 telegram_url = f"https://api.telegram.org/bot{telegram_token}/sendMessage?chat_id={chat_id}&text={requests.utils.quote(message_text)}"
                 try:
