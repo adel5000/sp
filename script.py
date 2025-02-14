@@ -1,21 +1,17 @@
-from flask import Flask, jsonify
+import os
 import requests
 import json
-import os
-
+from flask import Flask, jsonify
 
 app = Flask(__name__)
 
 # إعدادات API و Telegram
-api_url = "https://sp-today.com/app_api/cur_damascus.json"  # رابط API لجلب الأسعار
-telegram_token = "7924669675:AAGLWCdlVRnsRg6yF01-u7PFxwTgJ4ZvBtc"  # رمز التوكن الخاص بالتلغرام
-chat_id = "-1002474033832"  # معرف الدردشة في التلغرام
-
-# ملف لتخزين آخر سعر
+api_url = "https://sp-today.com/app_api/cur_damascus.json"  
+telegram_token = "7924669675:AAGLWCdlVRnsRg6yF01-u7PFxwTgJ4ZvBtc"  
+chat_id = "-1002474033832"  
 last_price_file = 'last_price.json'
-
-# قائمة العملات التي تريد تتبعها
 currencies_to_track = ["USD", "SAR", "TRY", "AED", "JOD", "EGP", "KWD"]
+
 @app.route('/')
 def run_script():
     response = requests.get(api_url)
@@ -25,31 +21,30 @@ def run_script():
     send_update = False  
     before = 0
     after = 0
+
     if data:
         current_prices = {}
 
-        # التحقق مما إذا كان الملف موجودًا، وإذا لم يكن موجودًا يتم إنشاؤه بقيمة افتراضية
+        # إنشاء الملف إذا لم يكن موجودًا
         if not os.path.exists(last_price_file):
             with open(last_price_file, 'w') as file:
-                json.dump({}, file)  # إنشاء ملف يحتوي على قاموس فارغ
+                json.dump({}, file)
 
         # قراءة آخر الأسعار من الملف
         try:
             with open(last_price_file, 'r') as file:
                 last_prices = json.load(file)
-                if not isinstance(last_prices, dict):  # إذا لم يكن القاموس صحيحًا، إعادة تعيينه
+                if not isinstance(last_prices, dict):
                     last_prices = {}
         except (FileNotFoundError, json.JSONDecodeError):
             last_prices = {}
 
-        # التحقق من محتويات last_price.json بعد القراءة
         print("🔍 محتوى last_price.json عند بدء التشغيل:", last_prices)
 
         # الحصول على السعر السابق للدولار
         last_usd_price = last_prices.get("USD", None)
         before = last_usd_price
 
-        # تخزين الأسعار الحالية
         for currency in data:
             if currency['name'] in currencies_to_track:
                 currency_name = currency['ar_name']
@@ -82,19 +77,33 @@ def run_script():
                 messages.append(message)
                 current_prices[currency['name']] = ask_price
 
-        # تحديث الملف فقط إذا كان هناك تغيير
-        if send_update or before == None:
-            with open(last_price_file, 'w') as file:
-                json.dump(current_prices, file, indent=4)
-                file.flush()  # لضمان الكتابة الفورية
+        # **إرسال التحديث إلى Telegram فقط إذا كان هناك تغيير**
+        if send_update:
+            message_text = "\n🔹 تحديث أسعار الصرف :\n\n" + "\n\n".join(messages)
 
-            # التحقق من محتويات الملف بعد الكتابة
-            with open(last_price_file, 'r') as file:
-                saved_data = json.load(file)
-                print("✅ تم تحديث last_price.json بالمحتوى:", saved_data)
+            # رابط API للإرسال إلى Telegram
+            telegram_url = f"https://api.telegram.org/bot{telegram_token}/sendMessage"
+            payload = {
+                "chat_id": chat_id,
+                "text": message_text,
+                "parse_mode": "HTML"
+            }
 
-            return jsonify({"status": "success", "message": "تم تحديث الأسعار وحفظها.", "before": before, "after": after}), 200
+            try:
+                telegram_response = requests.post(telegram_url, json=payload)
+                telegram_response.raise_for_status()
+                print("✅ تم إرسال الرسالة إلى Telegram:", message_text)
+
+                # تحديث الملف بعد الإرسال
+                with open(last_price_file, 'w') as file:
+                    json.dump(current_prices, file, indent=4)
+
+                return jsonify({"status": "success", "message": "تم إرسال التحديث إلى Telegram ✅", "before": before, "after": after}), 200
+            except requests.exceptions.RequestException as e:
+                return jsonify({"status": "error", "message": str(e)}), 500
+
         else:
             return jsonify({"status": "no_update", "message": "لم يتغير سعر الدولار، لا حاجة للتحديث.", "before": before, "after": after}), 200
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8000)
