@@ -58,8 +58,10 @@ def run_script():
                 if currency['name'] == "USD" and last_usd_price is not None:
                     if ask_price > last_usd_price:
                         usd_message = "📉 انخفاض في قيمة الليرة السورية أمام الدولار"
+                        send_update = True
                     elif ask_price < last_usd_price:
                         usd_message = "📈 تحسن في قيمة الليرة السورية أمام الدولار"
+                        send_update = True
                     # إذا تغير سعر الدولار، نقوم بتحديد الإرسال
                     if ask_price != last_usd_price:
                         send_update = True  
