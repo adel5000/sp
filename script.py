@@ -12,6 +12,12 @@ chat_id = "-1002474033832"
 last_price_file = 'last_price.json'
 currencies_to_track = ["USD", "SAR", "TRY", "AED", "JOD", "EGP", "KWD"]
 
+# قاموس الأعلام
+flags = {
+    "USD": "🇺🇸", "SAR": "🇸🇦", "TRY": "🇹🇷", "AED": "🇦🇪",
+    "JOD": "🇯🇴", "EGP": "🇪🇬", "KWD": "🇰🇼"
+}
+
 @app.route('/')
 def run_script():
     response = requests.get(api_url)
@@ -51,6 +57,9 @@ def run_script():
                 ask_price = currency['ask']
                 bid_price = currency['bid']
                 change = currency['change']
+                
+                # تحديد العلم بناءً على العملة
+                flag = flags.get(currency['name'], "🏳️")
 
                 if currency['name'] == "USD":
                     after = ask_price
@@ -67,8 +76,8 @@ def run_script():
                     if ask_price != last_usd_price:
                         send_update = True  
 
-                # تكوين الرسالة
-                message = f"""{currency_name}
+                # تكوين الرسالة مع العلم
+                message = f"""{flag} {currency_name}
 {usd_message}
 🔹 سعر المبيع : {bid_price} ل.س  
 🔹 سعر الشراء : {ask_price} ل.س  
