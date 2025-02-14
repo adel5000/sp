@@ -83,7 +83,7 @@ def run_script():
                 current_prices[currency['name']] = ask_price
 
         # تحديث الملف فقط إذا كان هناك تغيير
-        if send_update:
+        if send_update or before = None:
             with open(last_price_file, 'w') as file:
                 json.dump(current_prices, file, indent=4)
                 file.flush()  # لضمان الكتابة الفورية
