@@ -1,6 +1,8 @@
 from flask import Flask, jsonify
 import requests
 import json
+import os
+
 
 app = Flask(__name__)
 
@@ -20,41 +22,43 @@ def run_script():
     data = response.json()
 
     messages = []
-    send_update = False  # متغير لتحديد ما إذا كان يجب إرسال التحديث
+    send_update = False  
     before = 0
-    after  = 0
+    after = 0
     if data:
         current_prices = {}
+
+        # التحقق مما إذا كان الملف موجودًا، وإذا لم يكن موجودًا يتم إنشاؤه بقيمة افتراضية
+        if not os.path.exists(last_price_file):
+            with open(last_price_file, 'w') as file:
+                json.dump({}, file)  # إنشاء ملف يحتوي على قاموس فارغ
 
         # قراءة آخر الأسعار من الملف
         try:
             with open(last_price_file, 'r') as file:
                 last_prices = json.load(file)
+                if not isinstance(last_prices, dict):  # إذا لم يكن القاموس صحيحًا، إعادة تعيينه
+                    last_prices = {}
         except (FileNotFoundError, json.JSONDecodeError):
             last_prices = {}
 
-        # إرجاع محتويات ملف last_price.json لمراجعتها
-        return jsonify({"last_prices": last_prices}), 200
+        # التحقق من محتويات last_price.json بعد القراءة
+        print("🔍 محتوى last_price.json عند بدء التشغيل:", last_prices)
 
         # الحصول على السعر السابق للدولار
         last_usd_price = last_prices.get("USD", None)
         before = last_usd_price
+
         # تخزين الأسعار الحالية
         for currency in data:
             if currency['name'] in currencies_to_track:
                 currency_name = currency['ar_name']
                 ask_price = currency['ask']
-                
                 bid_price = currency['bid']
                 change = currency['change']
+
                 if currency['name'] == "USD":
                     after = ask_price
-                # تحديد العلم
-                flags = {
-                    "USD": "🇺🇸", "SAR": "🇸🇦", "EUR": "🇪🇺", "TRY": "🇹🇷",
-                    "AED": "🇦🇪", "JOD": "🇯🇴", "EGP": "🇪🇬", "KWD": "🇰🇼"
-                }
-                flag = flags.get(currency['name'], "🏳️")
 
                 # إضافة ملاحظة لسعر الدولار
                 usd_message = ""
@@ -65,42 +69,32 @@ def run_script():
                     elif ask_price < last_usd_price:
                         usd_message = "📈 تحسن في قيمة الليرة السورية أمام الدولار"
                         send_update = True
-                    # إذا تغير سعر الدولار، نقوم بتحديد الإرسال
                     if ask_price != last_usd_price:
                         send_update = True  
 
                 # تكوين الرسالة
-                message = f"""{flag} {currency_name}
+                message = f"""{currency_name}
 {usd_message}
 🔹 سعر المبيع : {bid_price} ل.س  
 🔹 سعر الشراء : {ask_price} ل.س  
 🔹 التغيير : {change}
 """
                 messages.append(message)
-
-                # تخزين السعر في القاموس
                 current_prices[currency['name']] = ask_price
 
-        # إرسال التحديث فقط إذا تغير سعر الدولار
-        if send_update and messages:
-            message_text = "\n🔹 تحديث أسعار الصرف :\n\n" + "\n\n".join(messages[:])
+        # تحديث الملف فقط إذا كان هناك تغيير
+        if send_update:
+            with open(last_price_file, 'w') as file:
+                json.dump(current_prices, file, indent=4)
+                file.flush()  # لضمان الكتابة الفورية
 
-            # إرسال الرسالة إلى Telegram
-            telegram_url = f"https://api.telegram.org/bot{telegram_token}/sendMessage?chat_id={chat_id}&text={requests.utils.quote(message_text)}"
-            try:
-                # تفعيل السطر التالي إذا كنت تريد إرسال الرسالة فعليًا
-                response = requests.get(telegram_url)
-                response.raise_for_status()
-                print("✅ Message ready to be sent:\n", message_text)
+            # التحقق من محتويات الملف بعد الكتابة
+            with open(last_price_file, 'r') as file:
+                saved_data = json.load(file)
+                print("✅ تم تحديث last_price.json بالمحتوى:", saved_data)
 
-                # تحديث آخر الأسعار في الملف
-                with open(last_price_file, 'w') as file:
-                    json.dump(current_prices, file)
-
-                return jsonify({"status": "success", "message": "تم إرسال التحديث إلى Telegram ✅"}), 200
-            except requests.exceptions.RequestException as e:
-                return jsonify({"status": "error", "message": str(e)}), 500
+            return jsonify({"status": "success", "message": "تم تحديث الأسعار وحفظها.", "before": before, "after": after}), 200
         else:
-            return jsonify({"status": "no_update", "message": "لم يتغير سعر الدولار، لا حاجة للتحديث." , "before" : before, "after" : after}), 200
+            return jsonify({"status": "no_update", "message": "لم يتغير سعر الدولار، لا حاجة للتحديث.", "before": before, "after": after}), 200
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8000)
