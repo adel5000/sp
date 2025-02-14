@@ -22,7 +22,8 @@ def run_script():
 
     messages = []
     send_update = False  # متغير لتحديد ما إذا كان يجب إرسال التحديث
-
+    before = 0
+    after  = 0
     if data:
         current_prices = {}
 
@@ -35,12 +36,13 @@ def run_script():
 
         # الحصول على السعر السابق للدولار
         last_usd_price = last_prices.get("USD", None)
-
+        before = last_usd_price
         # تخزين الأسعار الحالية
         for currency in data:
             if currency['name'] in currencies_to_track:
                 currency_name = currency['ar_name']
                 ask_price = currency['ask']
+                after = ask_price
                 bid_price = currency['bid']
                 change = currency['change']
 
@@ -94,7 +96,7 @@ def run_script():
             except requests.exceptions.RequestException as e:
                 return jsonify({"status": "error", "message": str(e)}), 500
         else:
-            return jsonify({"status": "no_update", "message": "لم يتغير سعر الدولار، لا حاجة للتحديث."}), 200
+            return jsonify({"status": "no_update", "message": "لم يتغير سعر الدولار، لا حاجة للتحديث." , "before" : {before}, "after" : {after}}), 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8000)
