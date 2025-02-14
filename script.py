@@ -96,7 +96,7 @@ def run_script():
             except requests.exceptions.RequestException as e:
                 return jsonify({"status": "error", "message": str(e)}), 500
         else:
-            return jsonify({"status": "no_update", "message": "لم يتغير سعر الدولار، لا حاجة للتحديث." , "before" : {before}, "after" : {after}}), 200
+            return jsonify({"status": "no_update", "message": "لم يتغير سعر الدولار، لا حاجة للتحديث." , "before" : before, "after" : after}), 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8000)
