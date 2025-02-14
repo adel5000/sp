@@ -42,10 +42,11 @@ def run_script():
             if currency['name'] in currencies_to_track:
                 currency_name = currency['ar_name']
                 ask_price = currency['ask']
-                after = ask_price
+                
                 bid_price = currency['bid']
                 change = currency['change']
-
+                if currency['name'] == "USD":
+                    after = ask_price
                 # تحديد العلم
                 flags = {
                     "USD": "🇺🇸", "SAR": "🇸🇦", "EUR": "🇪🇺", "TRY": "🇹🇷",
