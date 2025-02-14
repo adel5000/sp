@@ -1,3 +1,19 @@
+from flask import Flask, jsonify
+import requests
+import json
+
+app = Flask(__name__)
+
+# إعدادات API و Telegram
+api_url = "https://sp-today.com/app_api/cur_damascus.json"  # رابط API لجلب الأسعار
+telegram_token = "7924669675:AAGLWCdlVRnsRg6yF01-u7PFxwTgJ4ZvBtc"  # رمز التوكن الخاص بالتلغرام
+chat_id = "-1002474033832"  # معرف الدردشة في التلغرام
+
+# ملف لتخزين آخر سعر
+last_price_file = 'last_price.json'
+
+# قائمة العملات التي تريد تتبعها
+currencies_to_track = ["USD", "SAR", "TRY", "AED", "JOD", "EGP", "KWD"]
 @app.route('/')
 def run_script():
     response = requests.get(api_url)
@@ -86,3 +102,5 @@ def run_script():
                 return jsonify({"status": "error", "message": str(e)}), 500
         else:
             return jsonify({"status": "no_update", "message": "لم يتغير سعر الدولار، لا حاجة للتحديث." , "before" : before, "after" : after}), 200
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8000)
