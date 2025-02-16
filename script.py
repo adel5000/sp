@@ -47,7 +47,7 @@ def run_script():
     current_hour = datetime.now().hour
 
     # إرسال رسالة افتتاح السوق بعد الساعة 11 صباحًا
-    if current_hour >= 11 and not market_status["opened"]:
+    if current_hour >= 11 and  current_hour < 18 and not market_status["opened"]:
         market_status["opened"] = True
         market_status["closed"] = False
         with open(market_status_file, 'w') as file:
@@ -56,7 +56,7 @@ def run_script():
         messages.append("🔓 افتتاح السوق - أسعار الصرف:\n")
 
     # إرسال رسالة إغلاق السوق الساعة 6 مساءً
-    if current_hour >= 18 and not market_status["closed"]:
+    if current_hour >= 18 and  current_hour < 11 and not market_status["closed"]:
         market_status["closed"] = True
         market_status["opened"] = False
         with open(market_status_file, 'w') as file:
@@ -103,7 +103,7 @@ def run_script():
                 # حساب الفرق بين السعر القديم والجديد لكل من الشراء والمبيع
                 ask_difference = ask_price - old_ask_price if old_ask_price is not None else 0
                 bid_difference = bid_price - old_bid_price if old_bid_price is not None else 0
-
+                
                 ask_diff_text = f"({ask_difference:+} ل.س)" if old_ask_price is not None else "(لا يوجد بيانات سابقة)"
                 bid_diff_text = f"({bid_difference:+} ل.س)" if old_bid_price is not None else "(لا يوجد بيانات سابقة)"
 
@@ -148,8 +148,8 @@ def run_script():
             }
 
             try:
-                #telegram_response = requests.post(telegram_url, json=payload)
-                #telegram_response.raise_for_status()
+                telegram_response = requests.post(telegram_url, json=payload)
+                telegram_response.raise_for_status()
                 print("✅ تم إرسال الرسالة إلى Telegram:\n", message_text)
 
                 # تحديث الملف بعد الإرسال
