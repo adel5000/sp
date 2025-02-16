@@ -63,7 +63,7 @@ def run_script():
         messages.append("🔓 افتتاح السوق - أسعار الصرف:\n")
 
     # إرسال رسالة إغلاق السوق الساعة 6 مساءً
-    if current_hour >= 18 and current_hour < 11 and not market_status["closed"]:
+    if current_hour >= 18 and current_hour < 23 and not market_status["closed"]:
         market_status["closed"] = True
         market_status["opened"] = False
         with open(market_status_file, 'w') as file:
