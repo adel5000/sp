@@ -48,7 +48,7 @@ def run_script():
     
     current_time = local_time.strftime("%Y-%m-%d | %I:%M %p").replace("AM", "ص").replace("PM", "م")
     current_hour = local_time.hour
-
+     print("Time is : " , current_time)
     # إرسال رسالة افتتاح السوق بعد الساعة 11 صباحًا
     if current_hour >= 11 and  current_hour < 18 and not market_status["opened"]:
         market_status["opened"] = True
