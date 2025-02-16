@@ -41,7 +41,7 @@ def run_script():
         market_status = {"opened": False, "closed": False}
         with open(market_status_file, 'w') as file:
             json.dump(market_status, file, indent=4)
-
+    print("🔍 محتوى market_status.json عند بدء التشغيل:", market_status)
     # حالة السوق بعد الساعة 11 صباحاً
     current_time = (datetime.utcnow() + timedelta(hours=3)).strftime("%Y-%m-%d | %I:%M %p").replace("AM", "ص").replace("PM", "م")
     current_hour = (datetime.utcnow() + timedelta(hours=3)).hour
