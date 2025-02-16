@@ -1,7 +1,7 @@
 import os
 import requests
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import Flask, jsonify
 
 app = Flask(__name__)
@@ -43,8 +43,8 @@ def run_script():
             json.dump(market_status, file, indent=4)
 
     # حالة السوق بعد الساعة 11 صباحاً
-    current_time = datetime.now().strftime("%Y-%m-%d | %I:%M %p").replace("AM", "ص").replace("PM", "م")
-    current_hour = datetime.now().hour
+    current_time = (datetime.utcnow() + timedelta(hours=3)).strftime("%Y-%m-%d | %I:%M %p").replace("AM", "ص").replace("PM", "م")
+    current_hour = (datetime.utcnow() + timedelta(hours=3)).hour
 
     # إرسال رسالة افتتاح السوق بعد الساعة 11 صباحًا
     if current_hour >= 11 and  current_hour < 18 and not market_status["opened"]:
