@@ -53,8 +53,8 @@ def run_script():
     current_hour = local_time.hour
     logs.append({"current_time": current_time})  # تسجيل التوقيت الحالي
 
-    # إرسال رسالة افتتاح السوق بعد الساعة 11 صباحًا
-    if current_hour >= 11 and current_hour < 18 and not market_status["opened"]:
+    # إرسال رسالة افتتاح السوق بعد الساعة 10 صباحًا
+    if current_hour >= 10 and current_hour < 19 and not market_status["opened"]:
         market_status["opened"] = True
         market_status["closed"] = False
         with open(market_status_file, 'w') as file:
@@ -62,8 +62,8 @@ def run_script():
         send_update = True
         messages.append("🔓 افتتاح السوق - أسعار الصرف:\n")
 
-    # إرسال رسالة إغلاق السوق الساعة 6 مساءً
-    if current_hour >= 18 and current_hour < 23 and not market_status["closed"]:
+    # إرسال رسالة إغلاق السوق الساعة 7 مساءً
+    if current_hour >= 19 and current_hour < 23 and not market_status["closed"]:
         market_status["closed"] = True
         market_status["opened"] = False
         with open(market_status_file, 'w') as file:
