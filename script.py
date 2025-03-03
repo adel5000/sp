@@ -27,8 +27,11 @@ def run_script():
     logs = []  # قائمة لتجميع جميع الرسائل المطبوعة
 
     scraper = cloudscraper.create_scraper()  # إنشاء جلسة cloudscraper
-
-    response = scraper.get(api_url)  # استخدام cloudscraper بدلاً من requests
+     headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36",
+        "Accept-Language": "en-US,en;q=0.9",
+    }
+    response = scraper.get(api_url, headers=headers)  # استخدام cloudscraper بدلاً من requests
     data = response.json()
 
     messages = []
