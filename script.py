@@ -3,11 +3,13 @@ import requests
 import json
 from datetime import datetime, timedelta, timezone
 from flask import Flask, jsonify
+from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 
 # إعدادات API و Telegram
 api_url = "https://sp-today.com/app_api/cur_damascus.json"
+url = "https://sp-today.com/en"
 telegram_token = "7924669675:AAGLWCdlVRnsRg6yF01-u7PFxwTgJ4ZvBtc"
 chat_id = "-1002474033832"
 last_price_file = 'last_price.json'
@@ -28,8 +30,41 @@ def run_script():
     data = response.json()
 
     messages = []
+    gold_messages = []
     send_update = False
-
+        
+    # التحقق من نجاح الطلب
+    if response.status_code == 200:
+        soup = BeautifulSoup(response.text, "html.parser")
+        
+        # البحث عن جدول أسعار الذهب
+        gold_table = soup.find("table", class_="table table-hover gold")
+        
+        if gold_table:
+            rows = gold_table.find_all("tr")[1:]  # تجاهل العنوان
+            gold_prices = {}
+    
+            for row in rows:
+                columns = row.find_all("td")
+                if len(columns) >= 2:
+                    gold_type = row.find("th").text.strip()
+                    price = columns[1].find("strong").text.strip()
+                    gold_prices[gold_type] = price
+            
+            # طباعة الأسعار المستخرجة
+            for type_, price in gold_prices.items():
+                if(type_ == "18Karat Gold Gram"):
+                    gold_messages.append(f"🔹 سعر غرام الدهب (18 قيراط ) : {price} SYP")
+                elif(type_ == "21Karat Gold Gram"):
+                    gold_messages.append(f"🔹 سعر غرام الدهب (21 قيراط ) : {price} SYP")
+                elif(type_ == "24Karat Gold Gram"):
+                    gold_messages.append(f"🔹 سعر غرام الدهب (24 قيراط ) : {price} SYP")
+                else:
+                    gold_messages.append(f"🔹 سعر الاونصة الدهب  : {price} SYP")
+        else:
+            print("لم يتم العثور على جدول الذهب.")
+    else:
+        print("فشل في تحميل الصفحة.")
     # قراءة حالة السوق من الملف
     if os.path.exists(market_status_file):
         try:
@@ -133,7 +168,7 @@ def run_script():
 
         # **إرسال التحديث إلى Telegram فقط إذا كان هناك تغيير**
         if send_update:
-            message_text = f"\n🔹 تحديث أسعار الصرف ({current_time}):\n\n" + "\n\n".join(messages) + """
+            message_text = f"\n🔹 تحديث أسعار الصرف ({current_time}):\n\n" + "\n\n".join(messages)+ "\n\n".join(gold_messages) + """
             
 🔷 Facebook : https://facebook.com/liraprice1  
 🔷 Telegram : t.me/lira_price
