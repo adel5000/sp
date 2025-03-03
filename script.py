@@ -17,7 +17,7 @@ def get_gold_prices():
 
     if response.status_code == 200:
         soup = BeautifulSoup(response.text, "html.parser")
-        gold_table = soup.find("table", class_="table-hover")
+        gold_table = soup.find("table", class_="table table-hover gold")
 
         if gold_table:
             rows = gold_table.find_all("tr")[1:]  # تجاهل العنوان
