@@ -31,6 +31,7 @@ def run_script():
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36",
         "Accept-Language": "en-US,en;q=0.9",
     }
+
     response = scraper.get(api_url, headers=headers)
     data = response.json()
 
@@ -203,4 +204,4 @@ def run_script():
     return jsonify({"message": "Script executed successfully!", "logs": logs})
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8000)
+    app.run(host='0.0.0.0', port=8000, debug=True)
