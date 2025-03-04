@@ -26,12 +26,12 @@ flags = {
 def run_script():
     logs = []  # قائمة لتجميع جميع الرسائل المطبوعة
 
-    scraper = cloudscraper.create_scraper()  # إنشاء جلسة cloudscraper
-     headers = {
+    scraper = cloudscraper.create_scraper()
+    headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36",
         "Accept-Language": "en-US,en;q=0.9",
     }
-    response = scraper.get(api_url, headers=headers)  # استخدام cloudscraper بدلاً من requests
+    response = scraper.get(api_url, headers=headers)
     data = response.json()
 
     messages = []
@@ -44,11 +44,10 @@ def run_script():
         
         # البحث عن جدول أسعار الذهب
         gold_table = soup.find("table", class_="table table-hover gold")
+        gold_prices = {}
         
         if gold_table:
-            rows = gold_table.find_all("tr")[1:]  # تجاهل العنوان
-            gold_prices = {}
-    
+            rows = gold_table.find_all("tr")[1:]  # تجاهل العنوان    
             for row in rows:
                 columns = row.find_all("td")
                 if len(columns) >= 2:
