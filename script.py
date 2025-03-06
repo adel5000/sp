@@ -166,11 +166,11 @@ def run_script():
                     # طباعة الأسعار المستخرجة
                     for type_, price in gold_prices.items():
                         if(type_ == "18Karat Gold Gram"):
-                            gold_messages.append(f"🔹 سعر غرام الدهب (18 قيراط ) : {price} SYP")
+                            gold_messages.append(f"🔹 سعر غرام الذهب ( 18 قيراط ) : {price} ل.س")
                         elif(type_ == "21Karat Gold Gram"):
-                            gold_messages.append(f"🔹 سعر غرام الدهب (21 قيراط ) : {price} SYP")
+                            gold_messages.append(f"🔹 سعر غرام الذهب ( 21 قيراط ) : {price} ل.س")
                         elif(type_ == "24Karat Gold Gram"):
-                            gold_messages.append(f"🔹 سعر غرام الدهب (24 قيراط ) : {price} SYP")
+                            gold_messages.append(f"🔹 سعر غرام الذهب ( 24 قيراط ) : {price} ل.س")
                         else:
                             gold_messages.append(f"🔹 سعر الاونصة الدهب  : {price} SYP")
                 else:
