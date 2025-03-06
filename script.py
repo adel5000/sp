@@ -172,7 +172,7 @@ def run_script():
                         elif(type_ == "24Karat Gold Gram"):
                             gold_messages.append(f"🔹 سعر غرام الذهب ( 24 قيراط ) : {price} ل.س")
                         else:
-                            gold_messages.append(f"🔹 سعر الاونصة الدهب  : {price} ل.س")
+                            gold_messages.append(f"🔹 سعر الاونصة الذهب  : {price} $")
                 else:
                     print("لم يتم العثور على جدول الذهب.")
             else:
