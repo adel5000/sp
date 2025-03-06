@@ -143,7 +143,7 @@ def run_script():
 
         # **إرسال التحديث إلى Telegram فقط إذا كان هناك تغيير**
         if send_update:
-            response_gold = scraper.get(api_url, headers=headers)
+            response_gold = scraper.get(url, headers=headers)
             data = response_gold.json()
             gold_messages = []
             
