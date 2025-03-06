@@ -144,7 +144,6 @@ def run_script():
         # **إرسال التحديث إلى Telegram فقط إذا كان هناك تغيير**
         if send_update:
             response_gold = scraper.get(url, headers=headers)
-            data = response_gold.json()
             gold_messages = []
             
                             # التحقق من نجاح الطلب
@@ -190,7 +189,6 @@ def run_script():
                 "text": message_text,
                 "parse_mode": "HTML"
             }
-
             telegram_response = scraper.post(telegram_url, json=payload)  # استخدام cloudscraper هنا أيضاً
             telegram_response.raise_for_status()
             logs.append({"telegram_message_sent": message_text})
