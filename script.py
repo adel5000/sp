@@ -134,8 +134,8 @@ def run_script():
 
                 message = f"""{flag} {currency_name}
 {usd_message}
-🔹 سعر المبيع : {bid_price} ل.س {bid_diff_text}  
-🔹 سعر الشراء : {ask_price} ل.س {ask_diff_text}
+🔹سعر المبيع : {bid_price} ل.س {bid_diff_text}  
+🔹سعر الشراء : {ask_price} ل.س {ask_diff_text}
 """
                 messages.append(message)
 
@@ -166,18 +166,18 @@ def run_script():
                     # طباعة الأسعار المستخرجة
                     for type_, price in gold_prices.items():
                         if(type_ == "18Karat Gold Gram"):
-                            gold_messages.append(f"🔹 سعر غرام الذهب ( 18 قيراط ) : {price} ل.س")
+                            gold_messages.append(f"🔹سعر غرام الذهب (18 قيراط) : {price}ل.س")
                         elif(type_ == "21Karat Gold Gram"):
-                            gold_messages.append(f"🔹 سعر غرام الذهب ( 21 قيراط ) : {price} ل.س")
+                            gold_messages.append(f"🔹سعر غرام الذهب (21 قيراط) : {price}ل.س")
                         elif(type_ == "24Karat Gold Gram"):
-                            gold_messages.append(f"🔹 سعر غرام الذهب ( 24 قيراط ) : {price} ل.س")
+                            gold_messages.append(f"🔹سعر غرام الذهب (24 قيراط) : {price}ل.س")
                         else:
-                            gold_messages.append(f"🔹 سعر الاونصة الذهب  : {price} $")
+                            gold_messages.append(f"🔹سعر الاونصة الذهب  : {price}$")
                 else:
                     print("لم يتم العثور على جدول الذهب.")
             else:
                 print("فشل في تحميل الصفحة.")
-            message_text = f"\n🔹 تحديث أسعار الصرف ({current_time}):\n\n" + "\n\n".join(messages)+"\n\nأسعار الذهب :\n\n"+ "\n".join(gold_messages) + """
+            message_text = f"\n🔹 تحديث أسعار الصرف ({current_time}):\n\n" + "\n".join(messages)+"\n\nأسعار الذهب :\n\n"+ "\n".join(gold_messages) + """
             
 🔷 Facebook : https://facebook.com/liraprice1  
 🔷 Telegram : t.me/lira_price
