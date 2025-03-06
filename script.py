@@ -177,7 +177,7 @@ def run_script():
                     print("لم يتم العثور على جدول الذهب.")
             else:
                 print("فشل في تحميل الصفحة.")
-            message_text = f"\n🔹 تحديث أسعار الصرف ({current_time}):\n\n" + "\n\n".join(messages)+"\n\nأسعار الذهب :\n\n"+ "\n\n".join(gold_messages) + """
+            message_text = f"\n🔹 تحديث أسعار الصرف ({current_time}):\n\n" + "\n\n".join(messages)+"\n\nأسعار الذهب :\n\n"+ "\n".join(gold_messages) + """
             
 🔷 Facebook : https://facebook.com/liraprice1  
 🔷 Telegram : t.me/lira_price
