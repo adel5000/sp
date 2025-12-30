@@ -14,7 +14,8 @@ telegram_token = "7924669675:AAGLWCdlVRnsRg6yF01-u7PFxwTgJ4ZvBtc"
 chat_id = "-1002474033832"
 last_price_file = 'last_price.json'
 market_status_file = 'market_status.json'
-currencies_to_track = ["USD", "SAR", "TRY", "AED", "JOD", "EGP", "KWD"]
+#currencies_to_track = ["USD", "SAR", "TRY", "AED", "JOD", "EGP", "KWD"]
+currencies_to_track = ["USD", "SAR", "TRY"]
 
 # قاموس الأعلام
 flags = {
