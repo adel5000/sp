@@ -1,207 +1,464 @@
 import os
+import re
 import json
 from datetime import datetime, timedelta, timezone
+from typing import Any, Dict, Optional, Tuple
+
 from flask import Flask, jsonify
 from bs4 import BeautifulSoup
 import cloudscraper
 
 app = Flask(__name__)
 
-# إعدادات API و Telegram
-api_url = "https://sp-today.com/app_api/cur_damascus.json"
-url = "https://sp-today.com/en"
-telegram_token = "7924669675:AAGLWCdlVRnsRg6yF01-u7PFxwTgJ4ZvBtc"
-chat_id = "-1002474033832"
-last_price_file = 'last_price.json'
-market_status_file = 'market_status.json'
-#currencies_to_track = ["USD", "SAR", "TRY", "AED", "JOD", "EGP", "KWD"]
-currencies_to_track = ["USD", "SAR", "TRY"]
+BASE_URL = "https://sp-today.com/en"
 
-# قاموس الأعلام
-flags = {
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN", "PUT_YOUR_TOKEN_HERE")
+CHAT_ID = os.getenv("CHAT_ID", "PUT_YOUR_CHAT_ID_HERE")
+
+LAST_PRICE_FILE = "last_price.json"
+MARKET_STATUS_FILE = "market_status.json"
+
+CURRENCIES_TO_TRACK = ["USD", "SAR", "TRY"]  # عدّل مثل ما بدك
+
+FLAGS = {
     "USD": "🇺🇸", "SAR": "🇸🇦", "TRY": "🇹🇷", "AED": "🇦🇪",
-    "JOD": "🇯🇴", "EGP": "🇪🇬", "KWD": "🇰🇼"
+    "JOD": "🇯🇴", "EGP": "🇪🇬", "KWD": "🇰🇼", "EUR": "🇪🇺"
 }
 
-@app.route('/')
-def run_script():
-    logs = []  # قائمة لتجميع جميع الرسائل المطبوعة
+HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/120.0.0.0 Safari/537.36"
+    ),
+    "Accept-Language": "en-US,en;q=0.9,ar;q=0.8",
+}
 
-    scraper = cloudscraper.create_scraper()
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36",
-        "Accept-Language": "en-US,en;q=0.9",
+
+# -----------------------------
+# Helpers: storage / time
+# -----------------------------
+def load_json_file(path: str, default: Any) -> Any:
+    if not os.path.exists(path):
+        save_json_file(path, default)
+        return default
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        save_json_file(path, default)
+        return default
+
+
+def save_json_file(path: str, data: Any) -> None:
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=4)
+
+
+def now_damascus_str() -> Tuple[datetime, str, int]:
+    utc_now = datetime.now(timezone.utc)
+    local_time = utc_now + timedelta(hours=3)
+    current_time_str = local_time.strftime("%Y-%m-%d | %I:%M %p").replace("AM", "ص").replace("PM", "م")
+    return local_time, current_time_str, local_time.hour
+
+
+def to_float_num(s: str) -> Optional[float]:
+    if s is None:
+        return None
+    s = s.strip().replace(",", "")
+    m = re.search(r"[-+]?\d+(\.\d+)?", s)
+    return float(m.group(0)) if m else None
+
+
+# -----------------------------
+# Fetch HTML
+# -----------------------------
+def get_scraper():
+    return cloudscraper.create_scraper()
+
+
+def fetch_html(scraper, url: str) -> str:
+    resp = scraper.get(url, headers=HEADERS, timeout=30)
+    resp.raise_for_status()
+    return resp.text
+
+
+# -----------------------------
+# Strategy 1 (Best): Extract Next.js embedded JSON payload
+# -----------------------------
+def extract_nextjs_payload_objects(html: str) -> str:
+    """
+    Extract concatenated strings from `self.__next_f.push([1,"..."])` entries
+    and return as one big decoded text.
+    """
+    # Capture JS string content inside push
+    # Example pattern in the file: self.__next_f.push([1,"...."])
+    chunks = re.findall(r'self\.__next_f\.push\(\[1,"(.*?)"\]\)', html, flags=re.DOTALL)
+    if not chunks:
+        return ""
+
+    decoded_parts = []
+    for ch in chunks:
+        # Decode JS/JSON string escapes safely:
+        # wrap into a JSON string then json.loads to unescape
+        try:
+            decoded_parts.append(json.loads('"' + ch.replace("\\", "\\\\").replace('"', '\\"') + '"'))
+        except Exception:
+            # fallback attempt (sometimes already valid JSON escapes)
+            try:
+                decoded_parts.append(json.loads('"' + ch + '"'))
+            except Exception:
+                continue
+
+    return "\n".join(decoded_parts)
+
+
+def extract_data_from_payload(decoded_text: str) -> Optional[Dict[str, Any]]:
+    """
+    From decoded payload text, locate the big JSON object that contains:
+    "currencies":[...], "gold":{...}
+    and parse it.
+    """
+    # We look for a JSON object that includes "currencies" and "gold".
+    # This is robust enough as long as these keys exist in the payload.
+    start = decoded_text.find('"currencies":')
+    if start == -1:
+        return None
+
+    # Find nearest '{' before "currencies"
+    brace_start = decoded_text.rfind("{", 0, start)
+    if brace_start == -1:
+        return None
+
+    # Find a reasonable end after gold_updated_at (or just find the matching end by heuristic).
+    # We'll try to cut until '"gold_updated_at"' then expand to the next '}'.
+    anchor = decoded_text.find('"gold_updated_at"', start)
+    if anchor == -1:
+        anchor = decoded_text.find('"currencies_updated_at"', start)
+
+    if anchor != -1:
+        # take some tail after anchor
+        tail = decoded_text[brace_start:anchor + 8000]
+    else:
+        tail = decoded_text[brace_start:brace_start + 200000]  # hard limit
+
+    # Now we attempt to extract the first JSON object from tail by balancing braces.
+    depth = 0
+    end_idx = None
+    for i, c in enumerate(tail):
+        if c == "{":
+            depth += 1
+        elif c == "}":
+            depth -= 1
+            if depth == 0:
+                end_idx = i + 1
+                break
+
+    if not end_idx:
+        return None
+
+    obj_text = tail[:end_idx]
+
+    try:
+        return json.loads(obj_text)
+    except Exception:
+        return None
+
+
+def parse_currencies_from_data(data: Dict[str, Any], city: str, wanted: list) -> Dict[str, Dict[str, Any]]:
+    out = {}
+    for cur in data.get("currencies", []):
+        code = cur.get("code")
+        if code not in wanted:
+            continue
+        name_ar = cur.get("name_ar") or cur.get("name") or code
+        flag = cur.get("flag") or FLAGS.get(code, "🏳️")
+
+        city_obj = (cur.get("cities") or {}).get(city) or {}
+        buy = city_obj.get("buy")   # غالبًا buy = سعر الشراء
+        sell = city_obj.get("sell") # غالبًا sell = سعر المبيع
+
+        # نحول لـ float (بعضها int)
+        buy_f = float(buy) if buy is not None else None
+        sell_f = float(sell) if sell is not None else None
+
+        if buy_f is None or sell_f is None:
+            continue
+
+        out[code] = {
+            "code": code,
+            "name_ar": name_ar,
+            "flag": flag,
+            "ask": buy_f,   # ask = شراء (حسب تسميتك)
+            "bid": sell_f,  # bid = مبيع (حسب تسميتك)
+            "updated_at": cur.get("updated_at"),
+            "change_pct": city_obj.get("change"),
+        }
+    return out
+
+
+def parse_gold_from_data(data: Dict[str, Any], city: str) -> Dict[str, Any]:
+    gold = (data.get("gold") or {})
+    karats = gold.get("karats") or []
+    out_karats = {}
+
+    for k in karats:
+        karat = k.get("karat")
+        city_obj = (k.get("cities") or {}).get(city) or {}
+        buy = city_obj.get("buy")
+        sell = city_obj.get("sell")
+        if karat and buy is not None and sell is not None:
+            out_karats[karat] = {
+                "buy": float(buy),
+                "sell": float(sell),
+                "change_pct": city_obj.get("change"),
+                "updated_at": k.get("updated_at"),
+            }
+
+    ounce = gold.get("ounce") or {}
+    ounce_usd = ounce.get("price_usd")
+
+    return {
+        "karats": out_karats,
+        "ounce_usd": float(ounce_usd) if ounce_usd is not None else None,
+        "gold_updated_at": data.get("gold_updated_at") or gold.get("updated_at"),
+        "ounce_updated_at": ounce.get("updated_at"),
     }
 
-    response = scraper.get(api_url, headers=headers)
-    data = response.json()
 
+# -----------------------------
+# Strategy 2 (Fallback): HTML scrape for `a.rate-row`
+# -----------------------------
+def scrape_currencies_from_html(html: str, wanted: list) -> Dict[str, Dict[str, Any]]:
+    soup = BeautifulSoup(html, "html.parser")
+    out = {}
+
+    for a in soup.select("a.rate-row"):
+        code_el = a.select_one("span.font-semibold")
+        if not code_el:
+            continue
+        code = code_el.get_text(strip=True)
+        if code not in wanted:
+            continue
+
+        name_el = a.select_one("span.text-sm")
+        name = name_el.get_text(strip=True) if name_el else code
+
+        # The page shows two numbers (buy/sell) in two right-aligned blocks
+        nums = [to_float_num(s.get_text(" ", strip=True)) for s in a.select("div.text-end span")]
+        nums = [n for n in nums if isinstance(n, float)]
+
+        if len(nums) < 2:
+            continue
+
+        # From the sample, the first large number then second large number exist
+        buy = nums[0]
+        sell = nums[1]
+
+        out[code] = {
+            "code": code,
+            "name_ar": name,
+            "flag": FLAGS.get(code, "🏳️"),
+            "ask": buy,
+            "bid": sell,
+        }
+
+    return out
+
+
+def scrape_gold_ounce_from_html(html: str) -> Optional[float]:
+    soup = BeautifulSoup(html, "html.parser")
+    # The home page shows a Gold Ounce card with "$4596.92" style
+    card = soup.select_one('a[href*="/en/gold/ounce"]')
+    if not card:
+        return None
+    val = to_float_num(card.get_text(" ", strip=True))
+    return val
+
+
+# -----------------------------
+# Telegram formatting
+# -----------------------------
+def diff_text(new: float, old: Optional[float], unit: str = "ل.س") -> str:
+    if old is None:
+        return "(لا يوجد بيانات سابقة)"
+    d = new - old
+    return f"({d:+.0f} {unit})" if unit == "ل.س" else f"({d:+.2f} {unit})"
+
+
+def build_message(
+    current_time: str,
+    currency_rows: Dict[str, Dict[str, Any]],
+    gold: Dict[str, Any],
+    last_prices: Dict[str, Any],
+    market_prefix: str = "",
+) -> Tuple[str, bool]:
+    """
+    returns: (text, send_update)
+    """
     messages = []
-    gold_messages = []
     send_update = False
 
+    if market_prefix:
+        messages.append(market_prefix)
 
-    # قراءة حالة السوق من الملف
-    if os.path.exists(market_status_file):
+    # USD sentiment
+    last_usd = None
+    if "USD" in last_prices:
         try:
-            with open(market_status_file, 'r') as file:
-                market_status = json.load(file)
-        except (json.JSONDecodeError, ValueError):
-            market_status = {"opened": False, "closed": False}
-            with open(market_status_file, 'w') as file:
-                json.dump(market_status, file, indent=4)
-    else:
-        market_status = {"opened": False, "closed": False}
-        with open(market_status_file, 'w') as file:
-            json.dump(market_status, file, indent=4)
+            last_usd = float(last_prices["USD"].get("ask"))
+        except Exception:
+            last_usd = None
 
-    logs.append({"market_status": market_status})  # حفظ حالة السوق في الـ logs
+    # Currencies
+    for code in CURRENCIES_TO_TRACK:
+        if code not in currency_rows:
+            continue
 
-    # ضبط التوقيت ليكون UTC+3
-    utc_now = datetime.now(timezone.utc)  
-    local_time = utc_now + timedelta(hours=3)
-    current_time = local_time.strftime("%Y-%m-%d | %I:%M %p").replace("AM", "ص").replace("PM", "م")
-    current_hour = local_time.hour
-    logs.append({"current_time": current_time})  # تسجيل التوقيت الحالي
+        row = currency_rows[code]
+        ask = float(row["ask"])
+        bid = float(row["bid"])
 
-    # إرسال رسالة افتتاح السوق بعد الساعة 10 صباحًا
-    if current_hour >= 10 and current_hour < 19 and not market_status["opened"]:
+        old = last_prices.get(code) or {}
+        old_ask = float(old["ask"]) if "ask" in old else None
+        old_bid = float(old["bid"]) if "bid" in old else None
+
+        # if changed -> update
+        if old_ask is None or old_bid is None or ask != old_ask or bid != old_bid:
+            send_update = True
+
+        usd_line = ""
+        if code == "USD" and last_usd is not None and ask != last_usd:
+            # ملاحظة: إذا ask ارتفع يعني الليرة أضعف (انخفاض قيمة الليرة أمام الدولار)
+            usd_line = "📉 انخفاض في قيمة الليرة السورية أمام الدولار" if ask > last_usd else "📈 تحسن في قيمة الليرة السورية أمام الدولار"
+            send_update = True
+
+        messages.append(
+            f"""{row.get('flag','🏳️')} {row.get('name_ar', code)}
+{usd_line}
+🔹سعر المبيع : {bid:,.0f} ل.س {diff_text(bid, old_bid)}
+🔹سعر الشراء : {ask:,.0f} ل.س {diff_text(ask, old_ask)}
+"""
+        )
+
+    # Gold
+    gold_lines = []
+    karats = (gold.get("karats") or {})
+    # نعرض 18/21/24 (وإذا تحب غيرها زِد)
+    for k in ["18K", "21K", "24K"]:
+        if k in karats:
+            sell = karats[k]["sell"]
+            gold_lines.append(f"🔹سعر غرام الذهب ({k.replace('K',' قيراط')}) : {sell:,.0f} ل.س")
+
+    if gold.get("ounce_usd") is not None:
+        gold_lines.append(f"🔹سعر أونصة الذهب : ${gold['ounce_usd']:.2f}")
+
+    text = (
+        f"🔹 تحديث الأسعار ({current_time}):\n\n"
+        + "\n".join(messages)
+        + "\n\nأسعار الذهب:\n\n"
+        + "\n".join(gold_lines)
+        + "\n\n"
+        + "🔷 Facebook : https://facebook.com/liraprice1\n"
+        + "🔷 Telegram : t.me/lira_price\n"
+    )
+
+    return text, send_update
+
+
+def send_telegram(scraper, text: str) -> None:
+    telegram_url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+    payload = {
+        "chat_id": CHAT_ID,
+        "text": text,
+        "disable_web_page_preview": True,
+    }
+    resp = scraper.post(telegram_url, json=payload, timeout=30)
+    resp.raise_for_status()
+
+
+# -----------------------------
+# Main route
+# -----------------------------
+@app.route("/")
+def run_script():
+    logs = []
+    scraper = get_scraper()
+
+    # Market status
+    market_status = load_json_file(MARKET_STATUS_FILE, {"opened": False, "closed": False})
+    logs.append({"market_status": market_status})
+
+    local_dt, current_time, current_hour = now_damascus_str()
+    logs.append({"current_time": current_time})
+
+    market_prefix = ""
+    if 10 <= current_hour < 19 and not market_status.get("opened"):
         market_status["opened"] = True
         market_status["closed"] = False
-        with open(market_status_file, 'w') as file:
-            json.dump(market_status, file, indent=4)
-        send_update = True
-        messages.append("🔓 افتتاح السوق - أسعار الصرف:\n")
+        save_json_file(MARKET_STATUS_FILE, market_status)
+        market_prefix = "🔓 افتتاح السوق - أسعار الصرف:\n"
 
-    # إرسال رسالة إغلاق السوق الساعة 7 مساءً
-    if current_hour >= 19 and current_hour < 23 and not market_status["closed"]:
+    if 19 <= current_hour < 23 and not market_status.get("closed"):
         market_status["closed"] = True
         market_status["opened"] = False
-        with open(market_status_file, 'w') as file:
-            json.dump(market_status, file, indent=4)
-        send_update = True
-        messages.append("🔒 إغلاق السوق - أسعار الصرف:\n")
+        save_json_file(MARKET_STATUS_FILE, market_status)
+        market_prefix = "🔒 إغلاق السوق - أسعار الصرف:\n"
 
-    if data:
-        current_prices = {}
+    # Last prices
+    last_prices = load_json_file(LAST_PRICE_FILE, {})
+    if not isinstance(last_prices, dict):
+        last_prices = {}
+    logs.append({"last_price_start": last_prices})
 
-        # إنشاء الملف إذا لم يكن موجودًا
-        if not os.path.exists(last_price_file):
-            with open(last_price_file, 'w') as file:
-                json.dump({}, file)
+    # Fetch page
+    html = fetch_html(scraper, BASE_URL)
 
-        # قراءة آخر الأسعار من الملف
-        try:
-            with open(last_price_file, 'r') as file:
-                last_prices = json.load(file)
-                if not isinstance(last_prices, dict):
-                    last_prices = {}
-        except (FileNotFoundError, json.JSONDecodeError):
-            last_prices = {}
+    # Try best approach: Next.js payload -> full data
+    decoded = extract_nextjs_payload_objects(html)
+    data_obj = extract_data_from_payload(decoded) if decoded else None
 
-        logs.append({"last_price_start": last_prices})  # حفظ الأسعار القديمة
+    # Build current rows
+    city = "damascus"  # غيرها إذا بدك
+    if data_obj:
+        currencies = parse_currencies_from_data(data_obj, city=city, wanted=CURRENCIES_TO_TRACK)
+        gold = parse_gold_from_data(data_obj, city=city)
+        logs.append({"source": "nextjs_payload", "city": city})
+    else:
+        # fallback HTML
+        currencies = scrape_currencies_from_html(html, wanted=CURRENCIES_TO_TRACK)
+        ounce_usd = scrape_gold_ounce_from_html(html)
+        gold = {"karats": {}, "ounce_usd": ounce_usd}
+        logs.append({"source": "html_fallback", "city": city})
 
-        # الحصول على السعر السابق للدولار وتحويله إلى float
-        last_usd_price = float(last_prices.get("USD", {}).get("ask", 0)) if "USD" in last_prices else None
+    # If nothing found, return error
+    if not currencies:
+        return jsonify({"ok": False, "error": "No currency data parsed", "logs": logs}), 500
 
-        for currency in data:
-            if currency['name'] in currencies_to_track:
-                currency_name = currency['ar_name']
-                ask_price = float(currency['ask'])  
-                bid_price = float(currency['bid'])  
+    # Build message + decide update
+    msg_text, send_update = build_message(
+        current_time=current_time,
+        currency_rows=currencies,
+        gold=gold,
+        last_prices=last_prices,
+        market_prefix=market_prefix,
+    )
 
-                flag = flags.get(currency['name'], "🏳️")
+    # Send only if changed OR market open/close event triggered
+    if send_update or bool(market_prefix):
+        send_telegram(scraper, msg_text)
+        logs.append({"telegram_message_sent": True})
 
-                old_data = last_prices.get(currency['name'], {})
-                old_ask_price = float(old_data.get("ask", 0)) if "ask" in old_data else None
-                old_bid_price = float(old_data.get("bid", 0)) if "bid" in old_data else None
+        # Save new prices (only tracked currencies)
+        new_last = {}
+        for code, row in currencies.items():
+            new_last[code] = {"ask": row["ask"], "bid": row["bid"]}
+        save_json_file(LAST_PRICE_FILE, new_last)
+    else:
+        logs.append({"status": "No update needed"})
 
-                ask_difference = ask_price - old_ask_price if old_ask_price is not None else 0
-                bid_difference = bid_price - old_bid_price if old_bid_price is not None else 0
-
-                ask_diff_text = f"({ask_difference:+} ل.س)" if old_ask_price is not None else "(لا يوجد بيانات سابقة)"
-                bid_diff_text = f"({bid_difference:+} ل.س)" if old_bid_price is not None else "(لا يوجد بيانات سابقة)"
-
-                usd_message = ""
-                if currency['name'] == "USD" and last_usd_price is not None:
-                    if ask_price > last_usd_price:
-                        usd_message = "📉 انخفاض في قيمة الليرة السورية أمام الدولار"
-                        send_update = True
-                    elif ask_price < last_usd_price:
-                        usd_message = "📈 تحسن في قيمة الليرة السورية أمام الدولار"
-                        send_update = True
-                    if ask_price != last_usd_price:
-                        send_update = True
-
-                message = f"""{flag} {currency_name}
-{usd_message}
-🔹سعر المبيع : {bid_price} ل.س {bid_diff_text}  
-🔹سعر الشراء : {ask_price} ل.س {ask_diff_text}
-"""
-                messages.append(message)
-
-                current_prices[currency['name']] = {"ask": ask_price, "bid": bid_price}
-
-        # **إرسال التحديث إلى Telegram فقط إذا كان هناك تغيير**
-        if send_update:
-            response_gold = scraper.get(url, headers=headers)
-            gold_messages = []
-            
-                            # التحقق من نجاح الطلب
-            if response_gold.status_code == 200:
-                soup = BeautifulSoup(response_gold.text, "html.parser")
-        
-                # البحث عن جدول أسعار الذهب
-                gold_table = soup.find("table", class_="table table-hover gold")
-                gold_prices = {}
-        
-                if gold_table:
-                    rows = gold_table.find_all("tr")[1:]  # تجاهل العنوان    
-                    for row in rows:
-                        columns = row.find_all("td")
-                        if len(columns) >= 2:
-                            gold_type = row.find("th").text.strip()
-                            price = columns[1].find("strong").text.strip()
-                            gold_prices[gold_type] = price
-        
-                    # طباعة الأسعار المستخرجة
-                    for type_, price in gold_prices.items():
-                        if(type_ == "18Karat Gold Gram"):
-                            gold_messages.append(f"🔹سعر غرام الذهب (18 قيراط) : {price}ل.س")
-                        elif(type_ == "21Karat Gold Gram"):
-                            gold_messages.append(f"🔹سعر غرام الذهب (21 قيراط) : {price}ل.س")
-                        elif(type_ == "24Karat Gold Gram"):
-                            gold_messages.append(f"🔹سعر غرام الذهب (24 قيراط) : {price}ل.س")
-                        else:
-                            gold_messages.append(f"🔹سعر الاونصة الذهب  : {price}$")
-                else:
-                    print("لم يتم العثور على جدول الذهب.")
-            else:
-                print("فشل في تحميل الصفحة.")
-            message_text = f"\n🔹 تحديث أسعار الصرف ({current_time}):\n\n" + "\n".join(messages)+"\n\nأسعار الذهب :\n\n"+ "\n".join(gold_messages) + """
-            
-🔷 Facebook : https://facebook.com/liraprice1  
-🔷 Telegram : t.me/lira_price
-"""
-
-            telegram_url = f"https://api.telegram.org/bot{telegram_token}/sendMessage"
-            payload = {
-                "chat_id": chat_id,
-                "text": message_text,
-                "parse_mode": "HTML"
-            }
-            telegram_response = scraper.post(telegram_url, json=payload)  # استخدام cloudscraper هنا أيضاً
-            telegram_response.raise_for_status()
-            logs.append({"telegram_message_sent": message_text})
-
-            with open(last_price_file, 'w') as file:
-                json.dump(current_prices, file, indent=4)
+    return jsonify({"ok": True, "logs": logs})
 
 
-        else:
-            logs.append({"status": "No update needed"})
-
-    return jsonify({"message": "Script executed successfully!", "logs": logs})
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8000, debug=True)
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8000, debug=True)
