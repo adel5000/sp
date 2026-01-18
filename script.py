@@ -12,7 +12,7 @@ app = Flask(__name__)
 
 BASE_URL = "https://sp-today.com/en"
 
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN", "PUT_YOUR_TOKEN_HERE")
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN", "7924669675:AAGLWCdlVRnsRg6yF01-u7PFxwTgJ4ZvBtc")
 CHAT_ID = os.getenv("CHAT_ID", "PUT_YOUR_CHAT_ID_HERE")
 
 LAST_PRICE_FILE = "last_price.json"
